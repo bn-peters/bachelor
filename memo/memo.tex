@@ -1,0 +1,172 @@
+\documentclass{scrartcl}
+
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{amsmath}
+
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+
+\newtheorem{definition}{Definition}
+\newtheorem{assumption}{Assumption}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}[theorem]
+
+\newcommand{\FS}{\mathrm{FS}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\TT}{\mathbb{T}}
+\newcommand{\PP}{\mathbb{P}}
+\newcommand{\BB}{\mathbb{B}}
+
+\let\oldvdash\vdash
+\renewcommand{\vdash}{{\oldvdash}}
+\let\oldnvdash\nvdash
+\renewcommand{\nvdash}{{\oldnvdash}}
+
+\begin{document}
+
+\section{Preliminaries}
+
+\begin{assumption}
+  All functions definable in our logic with Church's Thesis are computable.
+\end{assumption}
+
+\section{Formal Systems}
+
+\begin{definition}[Formal Systems]
+  A formal system $\FS = (S, \neg, \vdash)$ consists of a type $S : \TT$ of logical sentences, a negation function $\neg : S \to S$ and a provability predicate $\vdash : S \to \PP$ fulfilling the following properties:
+  \begin{itemize}
+    \item $S$ is enumerable and discrete.
+    \item $\vdash$ is enumerable.
+    \item $\mathrm{FS}$ is consistent: $\forall s. \neg(\vdash s \land \vdash \neg s)$.
+  \end{itemize}
+\end{definition}
+
+$\FS$ can easily be instantiated with any reasonable formal logic with respect to a set of axioms, e.g.\ first- or second-order logic with a natural deduction system and Robinson's Q.
+
+\begin{definition}[Completeness]
+  A formal system $(S, \neg, \vdash)$ is called complete if every sentence can either be proven or disproven: $\forall s. \vdash s \lor \vdash \neg s$.
+\end{definition}
+\begin{theorem}[Deep Negations]\label{thm:dn}
+  Let $(S, \neg, \vdash)$ be a complete formal system and $s : S$. Then $\vdash \neg s \iff \nvdash s$.
+\end{theorem}
+\begin{proof}
+  $\implies$ by consistency, $\impliedby$ by completeness.
+\end{proof}
+
+\begin{theorem}[Co-enumerability of Provability] \label{thm:coenum-prov}
+  In any complete formal system $(S, \neg, \vdash)$, $\vdash$ is co-enumerable.
+\end{theorem}
+\begin{proof}
+  Consider the following function $P$:
+  % TODO
+  sdfmkldsfsd
+\end{proof}
+\begin{theorem}[Decidability of Provability]\label{thm:dec-prov}
+  In any complete formal system $\FS = (S, \neg, \vdash)$, $\vdash$ is decidable.
+\end{theorem}
+\begin{proof}
+  We get enumerability from the definition of $\FS$ and co-enumerability by Theorem~\ref{thm:coenum-prov}. To constructively get a decider from this we need a form of Post's Theorem. We use a formulation by [] that additionally only requires discreteness of $S$ and logical decidability of $\vdash$. We can easily get both by the definition of $\FS$ and by using completeness respectively.
+\end{proof}
+This result can also be shown by directly giving a decider: Given a sentence $s$ we enumerate all provable sentences $s'$ and check whether $s = s'$ or $\neg s = s'$ using discreteness. Correctness is easy to show and totality is by completeness. Note that this does not require enumerability of $S$. However, this approach is tedious to handle in Coq as it requires working with a total step-indexed function $S \to \NN \to \mathcal{O}(\BB)$. Converting it to a function $S \to \BB$ would, to our knowledge, again require enumerability of $S$.
+
+\section{Weak Representability}
+To be able to argue about computability, halting and divergence of untyped higher-order functions in Coq we need a constructive version of the Church-Turing-Thesis by []:
+\begin{assumption}
+  There is an evaluation function $\varphi_{c} : \NN \rightharpoonup \NN$ such that for every definable function $f : \NN \rightharpoonup \NN$ there is a code $c : \NN$ such that $\forall x. \varphi_{c}(x) = f~x$.
+\end{assumption}
+We encode partial functions $\NN \rightharpoonup \NN$ in our type theory as step-indexed functions $\NN \to \NN \to \mathcal{O} \NN$. We will keep the conversion between functions and codes implicit, as well as pairing functions between $\NN^{2}$ and $\NN$ to be able to apply the Church-Turing-Thesis to functions of higher arity. % TODO do i even need higher arity?
+
+\begin{definition}[Weak Representability]
+  Let $\FS = (S, \neg, \vdash)$ be a formal system, $X : \TT, P : X \to \PP$ be a predicate, $r : X \to S$. $r$ weakly represents $P$ in $\FS$, if $\forall x, P x \iff \vdash r\ x$.
+
+  If such an $r$ exists, we call $p$ representable in $\FS$.
+\end{definition}
+
+\begin{theorem}
+  Let $\FS = (S, \neg, \vdash)$ be a formal system that can weakly represent the following predicate:
+  \begin{align*}
+    H\ c\ x := \varphi_{c}(x) \text{ is defined}
+  \end{align*}
+  Then the Halting Problem is decidable.
+\end{theorem}
+\begin{proof}
+  By Theorem \ref{thm:dec-prov}, $\vdash$ is decidable, and, because decidability transports across equivalences, therefore also $H$.
+\end{proof}
+\begin{corollary}[Weak Gödel's First Incompleteness Theorem]
+  Any formal system that can weakly represent $H$ is incomplete.
+\end{corollary}
+
+
+\section{Representability}
+
+\begin{definition}[Representability]\label{def:repr}
+  Let $\FS = (S, \neg, \vdash)$ be a formal system and $r : (\NN \rightharpoonup \NN) \to \NN \to \NN \to S$. $r$ represents all functions in $\FS$, if for every $f$:
+  \begin{itemize}
+    \item $\forall x y. f~x = y \implies \vdash r~f~x~y$ and
+    \item $\forall x y y'. f~x = y \implies y \neq y' \implies \nvdash r~f~x~y'$.
+  \end{itemize}
+  If such an $r$ exists, $\FS$ is said to represent all functions.
+\end{definition}
+
+
+\begin{definition}[Consistent Guessing]
+  A language $L \subseteq \NN$ fulfills consistent guessing if
+  $$\{(c, x) \mid \varphi_{c}(x) = 0\} \subset L \quad \land \quad \{(c, x) \mid \varphi_{c}(x) \text{ is defined} \land \varphi_{c}(x) \neq 0\} \cap L = \emptyset,$$
+  or equivalently, % TODO notation for holds with another value
+  $$\forall c v.  (\varphi_{c}(x) = 0 \implies (c, x) \in L) \quad \land \quad (\varphi_{c}(x) \text{ is defined} \land \varphi_{c}(x) \neq 0 \implies (c, x) \notin L).$$
+\end{definition}
+Note that this definition does not place any restrictions on tuples $(c, x)$ such that $\varphi_{c}(x)$ is undefined, or rather, such that $c$ does not halt on input $x$.
+
+\begin{theorem}[Consistent guessing is undecidable]
+  No language $L \subseteq \NN$ that fulfills consistent guessing is decidable.
+\end{theorem}
+\begin{proof}
+  Let $f : \NN \to \NN \to \{0, 1\}$ be a total function such that $\forall cx. f~c~x = 0 \iff (c, x) \in L$. Choose
+  \begin{align*}
+    g : \NN \to \NN,  g~c := \begin{cases}
+      1 & \text{if } f~c~c = 0 \\
+      0 & \text{otherwise}
+    \end{cases}
+  \end{align*}
+  We now have $f~g~g = 0 \iff g~g \neq 0 \iff (g, g) \notin L \iff f~g~g \neq 0$. Therefore, $L$ is undecidable.
+\end{proof}
+
+\begin{theorem}[Consistent guessing is decidable]
+  Let $\FS = (S, \neg, \vdash)$ be a complete formal system  and $r$ a function that represents all functions in $FS$. Then there is a decidable language that fulfills consistent guessing.
+\end{theorem}
+\begin{proof}
+  Let $h : \NN \to \NN \to \{0, 1\}$ be the following function:
+  \begin{align*}
+    h(c, x) := \begin{cases}
+      0 & \text{if } r~c~x~0 \text{ is provable} \\
+      1 & \text{otherwise}
+    \end{cases}
+  \end{align*}
+  $h$ is and total by Theorem~\ref{thm:dec-prov} and completeness. It suffices to show that $L := \{(c, x) \mid h(c, x) = 0\}$ fulfills consistent guessing.
+
+  Let $c, x$ be such that $\varphi_{c}(x) = 0$. By Definition \ref{def:repr} we have $\vdash r~c~x~0$, and therefore $h(c, x) = 0$ and $(c, x) \in L$.
+
+  Let $c, x$ be such that $\varphi_{c}(x) \neq 0$. Similarly, we have $\nvdash r~c~x~0$ and therefore $h(c, x) = 1$ and $(c, x) \notin L$.
+\end{proof}
+
+\begin{corollary}
+  There is no complete formal system that can represent all functions.
+\end{corollary}
+\begin{corollary}[Gödel's First Incompleteness Theorem]
+  Any formal system that can represent all functions is incomplete.
+\end{corollary}
+
+\begin{theorem}[Explicit Incompleteness]
+  Let $\FS = (S, \neg, \vdash)$ be a formal system, $r$ a function that represents all functions in $\FS$. Dann
+
+
+
+  Then there is a sentence $s$ such that $\nvdash s$ and $\nvdash \neg s$.
+  % TODO write down sentence explicitely
+\end{theorem}
+
+
+
+
+\end{document}
